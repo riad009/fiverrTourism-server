@@ -37,7 +37,31 @@ try{
    
 const reviewCollection=client.db('dbReview').collection('review')
 
+//task code start..
 
+
+
+
+const taskCollection=client.db('task').collection('mytask')
+
+//task get
+app.get('/mytask',async(req,res)=>{
+    const query={}
+    const cursor = taskCollection.find(query);
+    const review= await cursor.toArray();
+    res.send(review)
+      })
+
+
+
+      app.post('/addtask',async (req,res)=>{
+
+        const bike=req.body;
+        const result= await taskCollection.insertOne(bike)
+        res.send(result)
+      })
+
+//task code edn...................................
 
 
 //assingment 12  start .................................................
