@@ -373,51 +373,66 @@ async function run() {
 
     
 
+  ////////////////////-- tour code start---///////////////
+  const tourCollection = client.db('Tourism').collection('Tour')
+  //post tour
+  app.post('/post/tour', async (req, res) => {
+    const product = req.body;
+    const result = await tourCollection.insertOne(product);
+    res.send(result);
+  });
 
+  //get tour by id
+  app.get('/get/tour', async (req, res) => {
+    const query = {}
+    const cursor = tourCollection.find(query);
+    const review = await cursor.toArray();
+    res.send(review)
+  })
+  
+   // get booking by id wise
+   app.get('/get/tour/id/:id', async (req, res) => {
 
+    const id = req.params.id
+    const query = { _id: ObjectId(id) }
+    const result = await tourCollection.findOne(query)
+    res.send(result)
+  })
+   
+  ////////////////////-- tour code start---///////////////
+  const bookingTourCollection = client.db('Tourism').collection('Booking')
+  //confirm booking
+  app.post('/post/tour/booking', async (req, res) => {
+    const product = req.body;
+    const result = await bookingTourCollection.insertOne(product);
+    res.send(result);
+  });
+  
 
+  //get all booking list
+  app.get('/get/findMyBooking/byEmail/', async (req,res)=>{
+        
+    let query ={};
+    if(req.query.email){ //if email have in req->query
+      query={
+        email: req.query.email //then make filter with email address an make object of email 
+      }
+    }
 
-    /////////////////////////////--  template code for CRUD operation --///////////////////////////////
-    const taskCollection = client.db('task').collection('mytask')
+    const cursor= bookingTourCollection.find(query);
+    const result= await cursor.toArray();
+    res.send(result);
+  })
 
-    //task get
-    app.get('/mytask', async (req, res) => {
+     //get all users
+     app.get('/get/allbooking/list', async (req, res) => {
       const query = {}
-      const cursor = taskCollection.find(query);
+      const cursor = bookingTourCollection.find(query);
       const review = await cursor.toArray();
       res.send(review)
     })
 
-
-    app.post('/addtask', async (req, res) => {
-
-      const bike = req.body;
-      const result = await taskCollection.insertOne(bike)
-      res.send(result)
-    })
-
-    //delete my product
-    app.delete('/deletetask/:id', async (req, res) => {
-      const id = req.params.id;
-      const query = { _id: ObjectId(id) }
-      const result = await taskCollection.deleteOne(query)
-      res.send(result)
-
-    })
-
-
-    // update
-    app.get('/user/:id', async (req, res) => {
-
-      const id = req.params.id
-      const query = { _id: ObjectID(id) }
-      const result = await commentCollection.findOne(query)
-      res.send(result)
-    })
-
-
-
-
+   
 
   }
   finally {
