@@ -1,15 +1,19 @@
 [
     {
-        "task": "YAMAHA",
-        "time": "dg"
+        "title": "YAMAHA",
+        "details": "dg",
+        "img": "dg"
     },
     {
-        "task": "SUZUKI",
-        "time": "dsg"
+        "title": "YAMAHA",
+        "details": "dg",
+        "img": "dg"
     },
+    
     {
-        "task": "KTM",
-        "time": "sdfg"
+        "title": "YAMAHA",
+        "details": "dg",
+        "img": "dg"
     }
-   
+    
   ]
