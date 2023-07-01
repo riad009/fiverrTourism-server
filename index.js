@@ -163,11 +163,11 @@ async function run() {
     //filter by price only
     app.get('/estore/filterprice/:price', async (req, res) => {
       const price = parseInt(req.params.price); // Convert price to an integer
-    
+
       try {
         const query = { price: { $lte: price } };
         const products = await estoreCollection.find(query).sort({ price: -1 }).toArray();
-    
+
         res.send(products);
       } catch (error) {
         console.error(error);
@@ -201,24 +201,24 @@ async function run() {
 
       res.send(products);
     });
-  
 
-     //find my product by id
-     app.get('/email/findmyproduct', async (req,res)=>{
-        
-      let query ={};
-      if(req.query.email){ //if email have in req->query
-        query={
+
+    //find my product by id
+    app.get('/email/findmyproduct', async (req, res) => {
+
+      let query = {};
+      if (req.query.email) { //if email have in req->query
+        query = {
           ownerEmail: req.query.email //then make filter with email address an make object of email 
         }
       }
 
-      const cursor= estoreCollection.find(query);
-      const result= await cursor.toArray();
+      const cursor = estoreCollection.find(query);
+      const result = await cursor.toArray();
       res.send(result);
     })
 
-    
+
 
 
 
@@ -226,42 +226,42 @@ async function run() {
     const cartcollection = client.db('Tourism').collection('cart')
 
     // post product --to the card
-   app.post('/order/card/post', async (req, res) => {
+    app.post('/order/card/post', async (req, res) => {
       const product = req.body;
-    
+
       const result = await cartcollection.insertOne(product);
       res.send(result);
     });
 
     //get card info
-    app.get('/findUserByEmail', async (req,res)=>{
-        
-      let query ={};
-      if(req.query.email){ //if email have in req->query
-        query={
+    app.get('/findUserByEmail', async (req, res) => {
+
+      let query = {};
+      if (req.query.email) { //if email have in req->query
+        query = {
           email: req.query.email //then make filter with email address an make object of email 
         }
       }
 
-      const cursor= cartcollection.find(query);
-      const result= await cursor.toArray();
+      const cursor = cartcollection.find(query);
+      const result = await cursor.toArray();
       res.send(result);
     })
-     
-       //delete my product
-       app.delete('/delete/cart/:id', async (req, res) => {
-        const id = req.params.id;
-        const query = { _id: ObjectId(id) }
-        const result = await cartcollection.deleteOne(query)
-        res.send(result)
-  
-      })
-   
-  
+
+    //delete my product
+    app.delete('/delete/cart/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) }
+      const result = await cartcollection.deleteOne(query)
+      res.send(result)
+
+    })
+
+
     ////////////////////-- user db code start----/////////////
     const userCollection = client.db('Tourism').collection('users')
-   
-    
+
+
     app.post('/post/users', async (req, res) => {
 
       const users = req.body;
@@ -277,50 +277,129 @@ async function run() {
       res.send(review)
     })
 
-     // update user rule
-     app.put('/updateUser/:id', async(req,res)=>{
-      const id=req.params.id;
-      const filter={_id: ObjectId(id)}
-      const user= req.body;
-      
-      const option= {upsert: true}
-      const updatedUser={
-      
+    // update user rule
+    app.put('/updateUser/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) }
+      const user = req.body;
+
+      const option = { upsert: true }
+      const updatedUser = {
+
         $set: {
-         
+
           accountType: user.accountType
         }
       }
-      const result= await userCollection.updateOne(filter,updatedUser,option)
+      const result = await userCollection.updateOne(filter, updatedUser, option)
       res.send(result)
-      })
+    })
 
+    //get user by emil
+    app.get('/get/findUser/byEmail/', async (req, res) => {
+
+      let query = {};
+      if (req.query.email) { //if email have in req->query
+        query = {
+          email: req.query.email //then make filter with email address an make object of email 
+        }
+      }
+
+      const cursor = userCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
     
+    // update user rule
+    app.put('/updateUser/accountInfo/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) };
+        const user = req.body;
+    
+        const option = { upsert: true };
+        const updatedUser = { $set: {} };
+    
+        if (user.accountType) {
+          updatedUser.$set.accountType = user.accountType;
+        }
+        if (user.shopName) {
+          updatedUser.$set.shopName = user.shopName;
+        }
+        if (user.name) {
+          updatedUser.$set.name = user.name;
+        }
+        if (user.email) {
+          updatedUser.$set.email = user.email;
+        }
+        if (user.emailVerified !== undefined) {
+          updatedUser.$set.emailVerified = user.emailVerified;
+        }
+        if (user.isAnonymous !== undefined) {
+          updatedUser.$set.isAnonymous = user.isAnonymous;
+        }
+    
+        // Update the properties directly in the updatedUser.$set object
+        if (user.shopName || user.name || user.photo || user.description || user.location || user.phoneNumber) {
+          updatedUser.$set.data = {
+            shopName: user.shopName,
+            name: user.name,
+            photo: user.photo,
+            description: user.description,
+            location: user.location,
+            phoneNumber: user.phoneNumber,
+          };
+        }
+    
+        const result = await userCollection.updateOne(filter, updatedUser, option);
+        res.send(result);
+      } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+      }
+    });
+    
+    
+  //search user by email
+   // product search
+   app.get("/user/search/:searchText", async (req, res) => {
+    const searchText = req.params.searchText;
+    const searchQuery = { email: { $regex: searchText, $options: 'i' } };
 
-      
+    try {
+      const productsearch = await userCollection.find(searchQuery).toArray();
+      res.send(productsearch);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('An error occurred while searching for product.');
+    }
+  });
+
+
+
+
 
     ////////////////////// ---- order confirm code start---////////////////
-    
+
     const confirmOrderCollection = client.db('Tourism').collection('orders')
     //post order
     app.post('/order/post', async (req, res) => {
       const product = req.body;
-    
+
       // Add local month and time to the product object
       const currentDate = new Date();
       const month = currentDate.toLocaleString('en-US', { month: 'long' });
       const time = currentDate.toLocaleTimeString('en-US', { timeStyle: 'short' });
       product.time = `${month} ${time}`;
-    
+
       const result = await confirmOrderCollection.insertOne(product);
       res.send(result);
     });
-    
+
 
     //get my order 
     app.get('/findOrderByEmail', async (req, res) => {
       let query = {};
-    
+
       if (req.query.email) {
         query = {
           $or: [
@@ -329,19 +408,19 @@ async function run() {
           ]
         };
       }
-    
+
       const cursor = confirmOrderCollection.find(query);
       const result = await cursor.toArray();
-    
+
       if (result.length === 0) {
         res.send('No orders found');
       } else {
         res.send(result);
       }
     });
-    
 
-    
+
+
     //get order item by id
     // get product by id wise
     app.get('/get/idWise/order/:id', async (req, res) => {
@@ -352,87 +431,192 @@ async function run() {
       res.send(result)
     })
 
-     // update product status
-     app.put('/update/productStatus/:id', async(req,res)=>{
-      const id=req.params.id;
-      const filter={_id: ObjectId(id)}
-      const user= req.body;
-      
-      const option= {upsert: true}
-      const updatedUser={
-      
+    // update product status
+    app.put('/update/productStatus/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const user = req.body;
+    
+      const options = { upsert: true };
+      const update = {
         $set: {
-         
-          orderStatus: user.orderStatus
-        }
+          'order.$[].card.orderStatus': user.orderStatus, // Update the "name" field
+          orderStatus: user.orderStatus, // Update the "orderStatus" field
+        },
+      };
+    
+      try {
+        const result = await confirmOrderCollection.updateOne(filter, update, options);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send('Error updating order status');
       }
-      const result= await confirmOrderCollection.updateOne(filter,updatedUser,option)
-      res.send(result)
-      })
-
-
+    });
     
 
-  ////////////////////-- tour code start---///////////////
-  const tourCollection = client.db('Tourism').collection('Tour')
-  //post tour
-  app.post('/post/tour', async (req, res) => {
-    const product = req.body;
-    const result = await tourCollection.insertOne(product);
-    res.send(result);
-  });
-
-  //get tour by id
-  app.get('/get/tour', async (req, res) => {
-    const query = {}
-    const cursor = tourCollection.find(query);
-    const review = await cursor.toArray();
-    res.send(review)
-  })
+  //get all order
   
-   // get booking by id wise
-   app.get('/get/tour/id/:id', async (req, res) => {
+    //get all product data
+    app.get('/get/allOrder', async (req, res) => {
+      const query = {}
+      const cursor = confirmOrderCollection.find(query);
+      const review = await cursor.toArray();
+      res.send(review)
+    })
 
-    const id = req.params.id
-    const query = { _id: ObjectId(id) }
-    const result = await tourCollection.findOne(query)
-    res.send(result)
-  })
-   
-  ////////////////////-- tour code start---///////////////
-  const bookingTourCollection = client.db('Tourism').collection('Booking')
-  //confirm booking
-  app.post('/post/tour/booking', async (req, res) => {
-    const product = req.body;
-    const result = await bookingTourCollection.insertOne(product);
-    res.send(result);
-  });
-  
-
-  //get all booking list
-  app.get('/get/findMyBooking/byEmail/', async (req,res)=>{
-        
-    let query ={};
-    if(req.query.email){ //if email have in req->query
-      query={
-        email: req.query.email //then make filter with email address an make object of email 
+    
+    //history get complete order
+    app.get('/get/history/byemail/', async (req, res) => {
+      let query = {};
+      if (req.query.email) {
+        query = {
+          "order.card.ownerEmail": req.query.email, // Update the query to ownerEmail
+          "order.card.orderStatus": "complete" // Update the query to orderStatus
+        };
       }
-    }
+    
+      const cursor = confirmOrderCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+    
+    
+    ////////////////////-- tour code start---///////////////
+    const tourCollection = client.db('Tourism').collection('Tour')
+    //post tour
+    app.post('/post/tour', async (req, res) => {
+      const product = req.body;
+      const result = await tourCollection.insertOne(product);
+      res.send(result);
+    });
 
-    const cursor= bookingTourCollection.find(query);
-    const result= await cursor.toArray();
-    res.send(result);
-  })
+    //get tour by id
+    app.get('/get/tour', async (req, res) => {
+      const query = {}
+      const cursor = tourCollection.find(query);
+      const review = await cursor.toArray();
+      res.send(review)
+    })
 
-     //get all users
-     app.get('/get/allbooking/list', async (req, res) => {
+    // get booking by id wise
+    app.get('/get/tour/id/:id', async (req, res) => {
+
+      const id = req.params.id
+      const query = { _id: ObjectId(id) }
+      const result = await tourCollection.findOne(query)
+      res.send(result)
+    })
+
+    ////////////////////-- tour code start---///////////////
+    const bookingTourCollection = client.db('Tourism').collection('Booking')
+    //confirm booking
+    app.post('/post/tour/booking', async (req, res) => {
+      const product = req.body;
+      const timestamp = new Date().toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+      });
+      product.timestamp = timestamp; // Add timestamp to the product
+
+      const result = await bookingTourCollection.insertOne(product);
+      res.send(result);
+    });
+
+
+
+    //get all booking list
+    app.get('/get/findMyBooking/byEmail/', async (req, res) => {
+
+      let query = {};
+      if (req.query.email) { //if email have in req->query
+        query = {
+          email: req.query.email //then make filter with email address an make object of email 
+        }
+      }
+
+      const cursor = bookingTourCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    })
+
+    //get all users
+    app.get('/get/allbooking/list', async (req, res) => {
       const query = {}
       const cursor = bookingTourCollection.find(query);
       const review = await cursor.toArray();
       res.send(review)
     })
 
-   
+    //get booking list by id
+    app.get('/get/bookingList/id/:id', async (req, res) => {
+
+      const id = req.params.id
+      const query = { _id: ObjectId(id) }
+      const result = await bookingTourCollection.findOne(query)
+      res.send(result)
+    })
+
+       //delete booking from list
+       app.delete('/delete/bookingList/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { _id: ObjectId(id) }
+        const result = await bookingTourCollection.deleteOne(query)
+        res.send(result)
+  
+      })
+
+      //update booking rule
+      // update user rule
+    app.put('/update/booking/clearance/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) }
+      const user = req.body;
+
+      const option = { upsert: true }
+      const updatedUser = {
+
+        $set: {
+
+          clearance: user.clearance
+        }
+      }
+      const result = await bookingTourCollection.updateOne(filter, updatedUser, option)
+      res.send(result)
+    })
+ 
+
+    /////////////////-- comment code-------------///////////
+    const commentCollection = client.db('Tourism').collection('comment')
+
+
+    //post comment and rating
+    app.post('/post/comment', async (req, res) => {
+      const users = req.body;
+      const timestamp = new Date().toLocaleString('en-US', {
+        hour: 'numeric',
+        minute: 'numeric',
+        day: 'numeric',
+        month: 'long'
+      });
+      const commentWithTimestamp = { ...users, timestamp };
+    
+      const result = await commentCollection.insertOne(commentWithTimestamp);
+      res.send(result);
+    });
+    
+
+     //get comment
+     app.get('/get/comment', async (req, res) => {
+      const query = {}
+      const cursor = commentCollection.find(query);
+      const review = await cursor.toArray();
+      res.send(review)
+    })
+
+
 
   }
   finally {
