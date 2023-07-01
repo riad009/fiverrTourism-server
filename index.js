@@ -220,7 +220,54 @@ async function run() {
 
 
 
+  //delete product from estore
+  app.delete('/delete/estore/product/:id', async (req, res) => {
+    const id = req.params.id;
+    const query = { _id: ObjectId(id) }
+    const result = await estoreCollection.deleteOne(query)
+    res.send(result)
 
+  })
+  //update estore product
+  app.put('/update/estore/product/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const user = req.body;
+      console.log('id is:', id);
+  
+      const option = { upsert: true };
+      const updatedUser = {
+        $set: {
+          ownerEmail: user.ownerEmail || undefined,
+          name: user.name || undefined,
+          Shops: user.Shops || undefined,
+          price: user.price || undefined,
+          description: user.description || undefined,
+          category: user.category || undefined,
+          featured: user.featured || undefined,
+          stock: user.stock || undefined,
+          count: user.count || undefined,
+          selectedColors: user.selectedColors || undefined,
+          image: user.image || undefined,
+        },
+      };
+  
+      // Remove fields with undefined values from the update object
+      Object.keys(updatedUser.$set).forEach((key) =>
+        updatedUser.$set[key] === undefined ? delete updatedUser.$set[key] : {}
+      );
+  
+      const result = await estoreCollection.updateOne(filter, updatedUser, option);
+      res.send(result);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Internal Server Error');
+    }
+  });
+  
+  
+  
 
     ////////////////////-- add to card code start----/////////////
     const cartcollection = client.db('Tourism').collection('cart')
@@ -616,6 +663,16 @@ async function run() {
       res.send(review)
     })
 
+    // delete comment
+    app.delete('/delete/comment/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) }
+      const result = await commentCollection.deleteOne(query)
+      res.send(result)
+
+    })
+    
+   
 
 
   }
