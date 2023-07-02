@@ -266,8 +266,62 @@ async function run() {
     }
   });
   
+
+  //get by feature true
+ app.get('/estore/get/featureItem', async (req, res) => {
+  const query = { featured: true }; // Update the query to filter by featured=true
+  const cursor = estoreCollection.find(query).sort({ _id: -1 }); // Sort by _id field in descending order
+  const review = await cursor.toArray();
+  res.send(review);
+});
+
+
+
+ ////////////////////-- add to card code start----/////////////
+ const categoryCollection = client.db('Tourism').collection('category')
+  //create category
+  //post estore data
+  app.post('/post/create/category', async (req, res) => {
+    const product = req.body;
+
+    const result = await categoryCollection.insertOne(product);
+    res.send(result);
+  });
+
+  //get category
+  app.get('/get/categoryName', async (req, res) => {
+    const query = {};
+    const cursor = categoryCollection.find(query);
+    const reviews = await cursor.toArray();
+  
+    const uniqueCategories = {};
+    const uniqueReviews = [];
+  
+    // Iterate through each review
+    for (const review of reviews) {
+      const category = review.category;
+  
+      // Check if the category is already added to the uniqueCategories object
+      if (!uniqueCategories[category]) {
+        // Add the category to uniqueCategories object and add the review to uniqueReviews array
+        uniqueCategories[category] = true;
+        uniqueReviews.push(review);
+      }
+    }
+  
+    res.send(uniqueReviews);
+  });
   
   
+  
+  app.get('/categoryId/:id', async (req, res) => {
+    const id = req.params.id;
+    const filter={_id: ObjectId(id)}
+    const category = await categoryCollection.findOne(filter);
+    const query = { category: category.category }; //one taking name from categor colelction another take from estore
+    const result = await estoreCollection.find(query).toArray();
+    res.send(result);
+  })
 
     ////////////////////-- add to card code start----/////////////
     const cartcollection = client.db('Tourism').collection('cart')
@@ -420,7 +474,39 @@ async function run() {
       res.status(500).send('An error occurred while searching for product.');
     }
   });
+ 
 
+  // update- edit user profile
+  app.put('/update/user/profile/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const user = req.body;
+      console.log('id is:', id);
+  
+      const option = { upsert: true };
+      const updatedUser = {
+        $set: {
+          name: user.name || undefined,
+          location: user.location || undefined,
+          phoneNumber: user.phoneNumber || undefined,
+          profileUrl: user.profileUrl || undefined,
+        
+        },
+      };
+  
+      // Remove fields with undefined values from the update object
+      Object.keys(updatedUser.$set).forEach((key) =>
+        updatedUser.$set[key] === undefined ? delete updatedUser.$set[key] : {}
+      );
+  
+      const result = await userCollection.updateOne(filter, updatedUser, option);
+      res.send(result);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Internal Server Error');
+    }
+  });
 
 
 
@@ -545,7 +631,7 @@ async function run() {
       res.send(review)
     })
 
-    // get booking by id wise
+    // get tour by id wise
     app.get('/get/tour/id/:id', async (req, res) => {
 
       const id = req.params.id
@@ -553,6 +639,88 @@ async function run() {
       const result = await tourCollection.findOne(query)
       res.send(result)
     })
+
+
+    //
+    //get all tour list
+    app.get('/get/alltour/list', async (req, res) => {
+      const query = {}
+      const cursor = tourCollection.find(query);
+      const review = await cursor.toArray();
+      res.send(review)
+    })
+
+    //delete tour from list
+    app.delete('/delete/tour/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) }
+      const result = await tourCollection.deleteOne(query)
+      res.send(result)
+
+    })
+
+   //update tour details
+   app.put('/update/tour/:id', async (req, res) => {
+    try {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const user = req.body;
+      console.log('id is:', id);
+  
+      const option = { upsert: true };
+      const updatedUser = {
+        $set: {
+          placeName: user.placeName || undefined,
+          sortTrailer: user.sortTrailer || undefined,
+          location: user.location || undefined,
+          duration: user.duration || undefined,
+          price: user.price || undefined,
+          description: user.description || undefined,
+          dateAndTiming: user.dateAndTiming || undefined,
+          availability: user.availability || undefined,
+          imageUrl: user.imageUrl || undefined,
+  
+        },
+      };
+  
+      // Remove fields with undefined values from the update object
+      Object.keys(updatedUser.$set).forEach((key) =>
+        updatedUser.$set[key] === undefined ? delete updatedUser.$set[key] : {}
+      );
+  
+      const result = await tourCollection.updateOne(filter, updatedUser, option);
+      res.send(result);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Internal Server Error');
+    }
+  });
+  
+ // update get tour by id wise
+ app.get('/update/get/tour/id/:id', async (req, res) => {
+
+  const id = req.params.id
+  const query = { _id: ObjectId(id) }
+  const result = await tourCollection.findOne(query)
+  res.send(result)
+})
+
+
+//search tour
+app.get("/tour/search/:searchText", async (req, res) => {
+  const searchText = req.params.searchText;
+  const searchQuery = { placeName: { $regex: searchText, $options: 'i' } };
+
+  try {
+    const productsearch = await tourCollection.find(searchQuery).toArray();
+    res.send(productsearch);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('An error occurred while searching for product.');
+  }
+});
+
+
 
     ////////////////////-- tour code start---///////////////
     const bookingTourCollection = client.db('Tourism').collection('Booking')
@@ -589,7 +757,7 @@ async function run() {
       res.send(result);
     })
 
-    //get all users
+    //get all booking list
     app.get('/get/allbooking/list', async (req, res) => {
       const query = {}
       const cursor = bookingTourCollection.find(query);
