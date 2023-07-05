@@ -2,6 +2,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const nodemailer = require('nodemailer');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 
@@ -276,6 +277,27 @@ async function run() {
 });
 
 
+
+
+
+//// update stock
+   app.put('/update/stock/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) }
+      const user = req.body;
+
+      const option = { upsert: true }
+      const updatedUser = {
+
+        $set: {
+
+          stock: user.stock
+        }
+      }
+      const result = await estoreCollection.updateOne(filter, updatedUser, option)
+      res.send(result)
+    })
+//// update stock
 
  ////////////////////-- add to card code start----/////////////
  const categoryCollection = client.db('Tourism').collection('category')
@@ -840,7 +862,43 @@ app.get("/tour/search/:searchText", async (req, res) => {
 
     })
     
-   
+   //////////////////////////////////////Email send///////////////////
+   app.post('/api/contact', (req, res) => {
+    const { name, email, message } = req.body;
+  
+    // Create a transporter with your email provider details
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'Reachoutpro.ai@gmail.com',
+        pass: 'lkxwcgriuiaqowtd',
+      },
+    });
+  
+    // Compose the email
+    const mailOptions = {
+      from: `${email}`,
+      to: 'recipient@example.com', // Replace with the recipient's email address
+      subject: 'New Contact Form Submission',
+      text: `
+        Name: ${name}
+        Email: ${email}
+        Message: ${message}
+      `,
+    };
+  
+    // Send the email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Failed to send email' });
+      } else {
+        console.log('Email sent: ' + info.response);
+        res.json({ message: 'Email sent successfully' });
+      }
+    });
+  });
+  
 
 
   }
